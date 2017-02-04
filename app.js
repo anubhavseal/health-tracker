@@ -1,75 +1,139 @@
-var food=['chicken chili','mutton rezala','mishti'];
+(function($) {
 
-(function($){
-
-    var FoodName = Backbone.Model.extend({});
+    var Food = Backbone.Model.extend({});
 
     var FoodList = Backbone.Collection.extend({
-        model:FoodName,
-        url:"https://api.nutritionix.com/v1_1/search/chicken?results=0%3A20&cal_min=20&cal_max=50000&fields=item_name%2Cbrand_name%2Citem_id%2Cbrand_id%2Cnf_calories&appId=4e548a5e&appKey=3a3c83f63f27942106128af3fd8699d5",
-        initialize:function(){
-           //this.on("add",display);
-        },
-        parse:function(response){
-            console.log(response);
+        model: Food,
+        parse: function(response) {
+            //console.log(response);
             for (var i = 0; i < response.hits.length; i++) {
-                var foodItem = new FoodName();
+                var foodItem = new Food();
+                var item_name = response.hits[i].fields.item_name;
+                var calories_present = response.hits[i].fields.nf_calories;
                 foodItem.set({
-                    name:response.hits[i].fields.item_name,
-                    calorie:response.hits[i].fields.item_name
+                    name: item_name.substr(0, 60),
+                    calorie: calories_present
                 });
                 this.add(foodItem);
             }
-            return this.models;
-        },
-    });
-
-    var ListView = Backbone.View.extend({
-        tagName:'li',
-        events:{
-
-        },
-        render:function(){
-            this.$el.html('<span>'+this.model.get('name')+'</span>');
-            return this;
         }
     });
 
-    var FoodItemView = Backbone.View.extend({
-        tagName:'div',
-            template:_.template($('#food-template').html()),
-        render:function(){
+    var SavedFoodList = Backbone.Collection.extend({
+        model: Food,
+        localStorage: new Backbone.LocalStorage('selectedFoodList')
+    })
+
+    var SavedFoodItemView = Backbone.View.extend({
+        tagName: 'div',
+        className: 'col-md-12',
+        events: {
+            'click #delete-food': 'deletefood'
+        },
+        template: _.template($('#saved-food-template').html()),
+        render: function() {
             this.$el.html(this.template(this.model.toJSON()));
             return this;
+        },
+        deletefood: function() {
+            this.model.destroy();
+        }
+    })
+
+    var FoodItemView = Backbone.View.extend({
+        tagName: 'div',
+        className: 'col-md-12',
+        template: _.template($('#food-template').html()),
+        events: {
+            'click #add-food': 'addFood'
+        },
+        render: function() {
+            this.$el.html(this.template(this.model.toJSON()));
+            return this;
+        },
+        addFood: function() {
+            appView.savedFoodList.create({
+                name: this.model.get('name'),
+                calorie: this.model.get('calorie')
+            });
         }
     });
 
     var AppView = Backbone.View.extend({
-        el:$('body'),
-
-        initialize:function(){
-            _.bindAll(this,'render');
+        el: $('body'),
+        initialize: function() {
+            document.getElementById("search-bar").addEventListener('keydown', this.prevent);
             this.list = new FoodList();
-            this.listenTo(this.list,'add',this.renderFoodItemView);
-            this.list.fetch();
-
-            this.render();
+            this.savedFoodList = new SavedFoodList();
+            this.listenTo(this.list, 'add', this.renderFoodItemView);
+            this.listenTo(this.savedFoodList, 'add', this.displaySavedFoodItems);
+            this.listenTo(this.savedFoodList, 'destroy', this.render);
+            this.savedFoodList.fetch();
+            this.totalCalorieCount();
         },
-        render:function(){
+        events: {
+            'click #search-btn': 'fetchData'
+        },
+        render: function() {
             var self = this;
-            _(this.list.models).each(function(index){
-                //self.appendFoodItem(FoodName);
-                console.log(index.name);
+            this.$('#saved-food-list').html("");
+            _(this.savedFoodList.models).each(function(index) {
+                self.reDisplaySavedFoodItems(index);
+                self.totalCalorieCount();
             });
+            if (this.savedFoodList.models.length === 0)
+                this.totalCalorieCount();
         },
-        appendFoodItem:function(FoodName){
-            var listView = new ListView({model:FoodName});
-            this.$el.append(listView.render().el)
+        renderFoodItemView: function(Food) {
+            var foodItemView = new FoodItemView({
+                model: Food
+            });
+            this.$('#search-results').append(foodItemView.render().el);
         },
-        renderFoodItemView:function(FoodName){
-            var foodItemView = new FoodItemView({model:FoodName});
-            this.$el.append(foodItemView.render().el);
-        }
-    })
+        displaySavedFoodItems: function(Food) {
+            var savedFoodItemView = new SavedFoodItemView({
+                model: Food
+            });
+            this.$('#saved-food-list').append(savedFoodItemView.render().el);
+            this.totalCalorieCount();
+        },
+        reDisplaySavedFoodItems: function(Food) {
+
+            var savedFoodItemView = new SavedFoodItemView({
+                model: Food
+            });
+            this.$('#saved-food-list').append(savedFoodItemView.render().el);
+        },
+        totalCalorieCount: function() {
+            var totalCalorie = 0;
+            _(this.savedFoodList.models).each(function(index) {
+                totalCalorie = totalCalorie + index.attributes.calorie;
+            });
+            $('#total-calorie-count').text("Calorie Intake =" + totalCalorie);
+        },
+        fetchData: function() {
+            var self = this;
+            document.getElementById("search-results").innerHTML = "";
+            var searchItem = document.getElementById("search-bar").value;
+            var url = "https://api.nutritionix.com/v1_1/search/" + searchItem + "?results=0%3A20&cal_min=20&cal_max=50000&fields=item_name%2Cbrand_name%2Citem_id%2Cbrand_id%2Cnf_calories&appId=4e548a5e&appKey=3a3c83f63f27942106128af3fd8699d5"
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url, true);
+            xhr.send();
+            xhr.onreadystatechange = function() {
+                if (this.readyState === 4 && this.status === 200) {
+                    var response = JSON.parse(this.responseText);
+                    self.list.reset();
+                    self.list.parse(response);
+                }
+                if (this.status !== 200)
+                    document.getElementById("search-results").innerHTML = "<h1 class='text-center'>Something's Not Right.Try Later</h1>";
+            }
+        },
+        prevent: function(event) {
+            if (event.which === 13)
+                event.preventDefault();
+        },
+    });
     var appView = new AppView();
+
 })(jQuery);

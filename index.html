@@ -1,23 +1,67 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>
 
-    </title>
-</head>
-<body>
-    <ul id='food-items'></ul>
-    <script type="text/template" id="food-template">
-            <div >
-                <span><%=name%></span>
-                <span><%=calorie%></span>
-                <input type="button"></input>
-            </div>
-        </script>
+<head>
+    <title></title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width initial-scale=1.0">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.2.3/backbone-min.js"></script>
-        <script src="app.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <header class="col-md-12">
+                <h1 class="text-center">Health Tracker App</h1>
+            </header>
+        </div>
+        <div class="row">
+            <div class="col-md-9">
+                <form>
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="search-bar">
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-1">
+                <button type="button" class="btn btn-primary" id="search-btn">Search</button>
+            </div>
+            <div class="col-md-2" id="total-calorie-count">
+                <span></span>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid">
+        <div class="row">
+            <hr class="col-md-12">
+        </div>
+        <section class="row">
+            <div class="col-md-6" id="search-results">
+
+            </div>
+            <div class="col-md-6" id="saved-food-list">
+
+            </div>
+        </section>
+    </div>
+    <script type="text/template" id="food-template">
+        <span class="col-md-8"><%=name%></span>
+        <span class="col-md-3">Calorie =<%=calorie%></span>
+        <button type="button" class="btn btn-primary col-md-1" id="add-food">Add</button>
+    </script>
+    <script type="text/template" id="saved-food-template">
+        <span class="col-md-7"><%=name%></span>
+        <span class="col-md-3">Calorie =<%=calorie%></span>
+        <button type="button" class="btn btn-primary col-md-2" id="delete-food">Delete</button>
+    </script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.2.3/backbone-min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone-localstorage.js/1.1.16/backbone.localStorage-min.js"></script>
+    <script src="app.js"></script>
 
 </body>
+
 </html>
